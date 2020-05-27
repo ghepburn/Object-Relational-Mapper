@@ -1,0 +1,3 @@
+COLUMN_CREATE_SQL = "{name} {type}"
+COLUMN_PK_CREATE_SQL = COLUMN_CREATE_SQL + " PRIMARY KEY"
+FOREIGNKEY_CREATE_SQL = "{name} {type} REFERENCES {table} {field}"

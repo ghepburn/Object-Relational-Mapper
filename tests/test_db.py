@@ -1,103 +1,61 @@
 import pytest
 import psycopg2
-# import os
-# import sys
-# sys.path.append("C:\\Users\\Greg\\Python_Projects\\WebDevelopment\\orm")
-
-# password = os.environ.get("GREGDB_PASSWORD")
-
 from tests import db, Database, Table, Column, ForeignKey
 
 
 class Dog(Table):
+	pk = Column(int, "primary_key")
 	name = Column(str)
 
 class Cat(Table):
 	name = Column(str)
 	friend = ForeignKey(Dog)
 
-
 class Test_Database:
 
 	def test_connection(self):
 		assert isinstance(db.conn, psycopg2.extensions.connection)
 
-	def test_basic_column(self):	
+	def test_execute(self):
 
-		assert Dog.name.type == str
-		assert Dog.name.sql_type == "VARCHAR"
+		ex1 = db._execute("SELECT * FROM products")
+		ex2 = db._execute("SELECT * FROM products WHERE name=%s", values=["hammer"])
+
+		assert len(ex1) > 1
+		assert ex2 == [{'id': 1, 'name': 'hammer', 'price': 10}]
+
 
 	def test_create(self):
-
+		num_of_subscribers = len(Dog.get_subscribers())
 		db.create(Dog)
 		db.create(Cat)
 
-		assert Dog._get_create_sql() == "CREATE TABLE dog (id SERIAL PRIMARY KEY, name VARCHAR)"
-		assert Cat._get_create_sql() == "CREATE TABLE cat (id SERIAL PRIMARY KEY, friend INTEGER, name VARCHAR)"
+		assert Dog._get_create_sql() == "CREATE TABLE dog (name VARCHAR, pk SERIAL PRIMARY KEY)"
+		assert Cat._get_create_sql() == "CREATE TABLE cat (friend INTEGER REFERENCES dog(pk), id SERIAL PRIMARY KEY, name VARCHAR)"
+		assert len(Dog.get_subscribers()) > num_of_subscribers 
 
-		for table in ['dog', 'cat']:
-			assert table in db.tables
 
-	def test_add(self):
+	def test_get_tables(self):
+		tables = db.tables
 
-		dug = Dog(name="Dug")
-		assert dug._get_insert_sql() == ("INSERT INTO dog (name) VALUES (%s) RETURNING (id)", ['Dug'])
-		
-		db.add(dug)
-		assert dug.id == 1
+		assert len(tables) > 3
+		assert 'dog' in tables
 
-	def test_instances(self):
+	def test_table_exists(self):
 
-		henry = Dog(name="Henry")
-		db.add(henry)
-		assert henry.id == 2
-
-		james = Dog(name="James")
-		db.add(james)
-		assert james.id == 3
-
-		assert henry.name == "Henry"
-
+		assert db.table_exists(Dog) == True
 
 	def test_drop_table(self):
 		
-		class Frog(Table):
-			name = Column(str)
+		db.drop_table(Cat)
+		db.drop_table(Dog)
 
-		db.create(Frog)
+		tables = db.tables
 
-		assert 'frog' in db.tables
-
-		db.drop_table(Frog)
-
-		assert Frog._get_drop_table_sql() == "DROP TABLE frog"
-		assert 'frog' not in db.tables
-
-	def test_delete_instance(self):
-		
-		bruce = Dog(name='Bruce')
-		db.add(bruce)
-
-		db.delete(bruce)
-
-		sql, value = bruce._get_delete_sql()
-		assert sql == "DELETE FROM dog WHERE id=%s"
-		assert value == str(bruce.id)
-
-	def test_foreign_keys(self):
-
-		tom = Dog(name="Tom")
-		db.add(tom)
-		sam = Cat(name='Sam', friend=tom)
-
-		assert sam.friend == tom
-		sql, values = sam._get_insert_sql() 
-		assert sql == "INSERT INTO cat (name, friend) VALUES (%s, %s) RETURNING (id)"
-		assert values == ['Sam', tom.id]
-		
-		db.add(sam)
-
+		assert 'cat' not in tables
+		assert 'dog' not in tables
 
 	def test_close_db(self):
+
 		db.close()
 		assert db.conn.closed == 1

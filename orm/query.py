@@ -1,82 +1,82 @@
 from .query_data import Query_Data
-from .sql import SQL_Factory
+from .sql import Order_By, Limit, Filter
+from collections import deque
 
 class Query:
-	def __init__(self, db, table, **kwargs):
-		self.db = db
+
+	package_data = Query_Data
+	postprocess_arguments = [Order_By, Limit]
+
+	def __init__(self, table):
 		self.table = table
-		self.sql_factory = SQL_Factory()
-		self.sql_arguments = []
+		self.sql_filter = Filter(self.table)
+		self.argument_queue = deque()
 
-		for key, value in kwargs.items():
-			self.sql_arguments.append(self.sql_factory.get_sql(key, value))
-
-	def all(self, **kwargs):
+	def all(self, columns="*", **kwargs):
 		
-		# currently ignores all arguments
+		self._process_args(**kwargs)
 
-		sql, fields = self.table._get_select_sql(**kwargs)
-		return self.process_query(sql, fields)
-
-	def get(self, **kwargs):
-
-		# takes only equals arguments
-
-		if not kwargs:
-			sql, fields = self.table._get_select_sql()
-			values = None
-		else:
-			sql, fields, values = self.table._get_select_where_sql(**kwargs)
+		sql = self.table._get_select_sql(fields=columns)
 		
-		return self.process_query(sql, fields, values)
+		return self._process_query(sql)
 
-	def filter(self, *args):
-		acceptable_operators = ["=", ">", "<"]
-		filters = []
-		for arg in args:
-			str_filter = arg.split()
-			if len(str_filter) == 3:
-				filters.append(str_filter)
-			else:
-				for operator in acceptable_operators:
-					if operator in arg:
-						str_filter = arg.split(operator)
-						str_filter.append(operator)
-						str_filter[1], str_filter[2] = str_filter[2], str_filter[1]
-						filters.append(str_filter)
-					else:
-						print("Incorrect Filter Argument")
+	def get(self, columns="*", **kwargs):
 
-		sql, fields, values = self.table._get_select_where_sql(filters=filters)
-		
-		return self.process_query(sql, fields, values)
-		
-	def process_query(self, sql, fields=None, values=None):
+		self.sql_filter.input(**kwargs)
+		filters, values = self.sql_filter.get()
+
+		self._process_args(**kwargs)
+
+		sql = self.table._get_select_where_sql(fields=columns, filters=filters)
+
+		return self._process_query(sql, values=values)
+
+	def filter(self, sql_filter, columns="*", **kwargs):
+
+		self.sql_filter.input(sql_filter, **kwargs)
+		filters, values = self.sql_filter.get()
+
+		self._process_args(**kwargs)
+		sql = self.table._get_select_where_sql(filters=filters, fields=columns)
+		return self._process_query(sql, values)
+
+	def _process_args(self, **kwargs):
+
+		for arg in self.postprocess_arguments:
+			print(arg.get_name())
+			if arg.get_name() in kwargs:
+				requested_arg = arg(kwargs[arg.get_name()])
+				self.argument_queue.append(requested_arg)
+
+	def _process_query(self, sql, values=None):
+
 		# add additional arguments
-		for arg in self.sql_arguments:
-			sql += arg
+		while len(self.argument_queue) > 0:
+			arg = self.argument_queue.popleft()
+			sql += arg.get_sql()
+			print(sql)
 
-		# process
-		raw_data = self.db._execute(sql, values)
+		if values != None and len(values) > 0:
+			data = self.table.notify_subscribers(sql, values)
+		else:
+			data = self.table.notify_subscribers(sql)
+
+		packaged_data = self._standardize(data)
 		
-		# standardize format
-		query_data = self.standardize(raw_data, fields)
-		
-		return query_data
+		return packaged_data
 
-	def standardize(self, raw_data, fields):
-		# map rows to dictionaries
-		data = []
-		for row in raw_data:
-			data_set = dict(zip(fields, row))
-			data.append(data_set)
-
+	def _standardize(self, data):
+		all_data = []
 		# instantiate dictionaries as objects
-		object_list = []
-		for data_set in data:
-			new_object = self.table(**data_set)
-			self.db._manual_connect(new_object)
-			object_list.append(new_object)
-
+		for response in data:
+			object_list = []
+			for row in response:
+				new_object = self.table(mapped=True, **row)
+				object_list.append(new_object)
+			all_data.append(self.package_data(*object_list))
+		
 		# return data representation object
-		return Query_Data(*object_list)
+		if len(all_data) == 1:
+			return all_data[0]
+		else:
+			return all_data

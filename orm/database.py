@@ -2,30 +2,31 @@ import psycopg2
 import inspect
 
 from .table import Table
-from .table_contents import Column, ForeignKey
 from .connection import Connection
 from .query import Query
-from .sql import GET_ALL_TABLES_SQL
+from .sql import statements
 
 
 
 class Database(Connection):
+
+	TABLES_SQL = statements.GET_ALL_TABLES_SQL
+	
 	def __init__(self, host, database, user, password):
 		super().__init__(host, database, user, password)
 
 	@property
 	def tables(self):
-		tables = self._execute(GET_ALL_TABLES_SQL)
-		tables_list = [", ".join(x) for x in tables]
+		tables = self._execute(self.TABLES_SQL)
+		tables_list = [", ".join(x.values()) for x in tables]
 		return tables_list
 
 	def table_exists(self, table):
 		tables = self.tables
-		table_names = [table.__name__, table.__name__.lower(), table.__name__.upper()]
-		for table in table_names:
-			if table in tables:
-				return True
-		return False
+		if table.get_name() in tables:
+			return True
+		else:
+			return False
 
 
 	# Create ----------------------
@@ -35,40 +36,37 @@ class Database(Connection):
 		if not self.table_exists(table):
 			sql = table._get_create_sql()
 			self._execute(sql)
-		else:
-			# raise error
-			pass
+			table.subscribe(self)
 
 
 	# Read ----------------------
 
 
-	def query(self, table, **kwargs):
-		return Query(self, table, **kwargs)
+	# def query(self, table, **kwargs):
+	# 	return Query(self, table, **kwargs)
 
 
 	# Update ----------------------
 
+	# def add(self, instance):
+	# 	sql, values = instance._get_insert_sql()
+	# 	data = self._execute(sql, values)
+	# 	instance.id = int(str(data)[2])
+	# 	self._manual_connect(instance)
 
-	def add(self, instance):
-		sql, values = instance._get_insert_sql()
-		data = self._execute(sql, values)
-		instance.id = int(str(data)[2])
-		self._manual_connect(instance)
-
-	def _manual_connect(self, instance):
-		instance.subscribe(self)
+	# def _manual_connect(self, instance):
+	# 	instance.subscribe(self)
 		
 	def _notify(self, *args):
-		self._execute(*args)
+		return self._execute(*args)
 
 
 	# Delete ----------------------
 
 
-	def delete(self, instance):
-		sql, values = instance._get_delete_sql()
-		self._execute(sql, values)
+	# def delete(self, instance):
+	# 	sql, values = instance._get_delete_sql()
+	# 	self._execute(sql, values)
 
 	def drop_table(self, table):
 		sql = table._get_drop_table_sql()

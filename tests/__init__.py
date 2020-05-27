@@ -4,6 +4,11 @@ sys.path.append("C:\\Users\\Greg\\Python_Projects\\WebDevelopment\\orm")
 
 password = os.environ.get("GREGDB_PASSWORD")
 
-from orm import Database, Table, Column, ForeignKey
+import orm
+Database = orm.Database
+Table = orm.Table
+Column = orm.Column
+ForeignKey = orm.ForeignKey
+Query = orm.Query
 
-db = Database(host='localhost', database='gregdb', user='postgres', password=password)
+db = orm.Database(host='localhost', database='gregdb', user='postgres', password=password)

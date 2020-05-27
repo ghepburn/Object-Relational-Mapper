@@ -2,5 +2,5 @@
 
 from .database import Database
 from .table import Table
-from .table_contents import Column, ForeignKey
 from .query import Query
+from .sql import statements, Column, ForeignKey, SQL_Table
