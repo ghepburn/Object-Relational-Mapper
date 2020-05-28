@@ -22,24 +22,24 @@ Custom object relational mapper built in Python using only Psycopg2 third party 
     
 3. Perform database CRUD operations
 
-- create
+        create
         db.create(department)
         db.create(Employee)
         IT = Department(name="information technology")
         greg = User(name="Greg", age=25, department=IT)
 
-- read
+        read
         departments = Department.query().all()
         oldest_employee = Employee.query().get(order_by="age", limit=1)
         greg = Employee.query().get(name"Greg")
 
-- update
+        update
         greg.age = 35
         IT.name="human resources"
 
-- delete
+        delete
         Department.remove(IT)
         db.drop_table(Employee)
 
-- or manual SQL
+        or manual SQL
         data = db.sql("SELECT * FROM EMPLOYEE")
