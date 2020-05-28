@@ -51,11 +51,11 @@ class SQL_Table():
 
 	@classmethod
 	def get_foreign_keys(cls):
-		foreign_keys = []
+		foreign_keys = {}
 		for name, column in inspect.getmembers(cls):
 			if column.__class__ in cls.acceptable_columns:
 				if isinstance(column, ForeignKey):
-					foreign_keys.append(name)
+					foreign_keys[name] = column
 		return foreign_keys
 
 	@classmethod
@@ -107,11 +107,14 @@ class SQL_Table():
 		return sql
 
 	@classmethod
-	def _get_drop_table_sql(cls):
-		return cls.DROP_SQL.format(table=cls.get_name())
+	def _get_drop_table_sql(cls, table=None):
+		if table==None:
+			table=cls.get_name()
+		return cls.DROP_SQL.format(table=table)
 
 	@classmethod
 	def _get_delete_sql(cls, field):
+
 		filters = field + "=%s"
 		
 		sql = cls.DELETE_SQL.format(table=cls.get_name(), filters=filters)

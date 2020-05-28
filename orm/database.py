@@ -4,7 +4,8 @@ import inspect
 from .table import Table
 from .connection import Connection
 from .query import Query
-from .sql import statements
+from .sql import statements, SQL_Table
+from .observer.subject import Subject
 
 
 
@@ -14,6 +15,12 @@ class Database(Connection):
 	
 	def __init__(self, host, database, user, password):
 		super().__init__(host, database, user, password)
+
+	@property
+	def model(self):
+		class Model(Table, Subject):
+			subscribers = [self]
+		return Model
 
 	@property
 	def tables(self):
@@ -36,26 +43,8 @@ class Database(Connection):
 		if not self.table_exists(table):
 			sql = table._get_create_sql()
 			self._execute(sql)
-			table.subscribe(self)
+			# table.subscribe(self)
 
-
-	# Read ----------------------
-
-
-	# def query(self, table, **kwargs):
-	# 	return Query(self, table, **kwargs)
-
-
-	# Update ----------------------
-
-	# def add(self, instance):
-	# 	sql, values = instance._get_insert_sql()
-	# 	data = self._execute(sql, values)
-	# 	instance.id = int(str(data)[2])
-	# 	self._manual_connect(instance)
-
-	# def _manual_connect(self, instance):
-	# 	instance.subscribe(self)
 		
 	def _notify(self, *args):
 		return self._execute(*args)
@@ -63,14 +52,16 @@ class Database(Connection):
 
 	# Delete ----------------------
 
-
-	# def delete(self, instance):
-	# 	sql, values = instance._get_delete_sql()
-	# 	self._execute(sql, values)
-
 	def drop_table(self, table):
-		sql = table._get_drop_table_sql()
+		if type(table) == str:
+			sql = SQL_Table._get_drop_table_sql(table=table)
+		else:
+			sql = table._get_drop_table_sql()
 		self._execute(sql)
+
+	# SQL ----------------------
+	def sql(self, sql):
+		return self._execute(sql)
 
 
 	# Close ----------------------

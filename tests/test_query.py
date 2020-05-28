@@ -5,7 +5,7 @@ import pytest
 Table = orm.Table
 Column = orm.Column
 
-class Planet(Table):
+class Planet(db.model):
 	name = Column(str)
 	age = Column(int)
 

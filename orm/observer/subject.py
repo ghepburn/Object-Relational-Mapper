@@ -1,5 +1,4 @@
 class Subject:
-	subscribers = []
 
 	@classmethod
 	def get_subscribers(cls):
@@ -10,9 +9,18 @@ class Subject:
 		results = []
 		if len(cls.subscribers) > 0:
 			for subscriber in cls.subscribers:
-				results.append(subscriber._notify(*args))
+				data = subscriber._notify(*args)
+				results.append(data)
+		if len(results) == 1:
+			results = results[0]
 		return results
 
 	@classmethod
 	def subscribe(cls, subscriber):
-		cls.subscribers.append(subscriber)
+		if subscriber not in cls.subscribers:
+			cls.subscribers.append(subscriber)
+
+	@classmethod
+	def remove_subscribers(cls):
+		cls.subscribers = []
+

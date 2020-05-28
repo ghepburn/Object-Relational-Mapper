@@ -2,9 +2,10 @@ from .sql import SQL_Table
 from .observer import Subject
 from .query import Query
 
-class Table(Subject, SQL_Table):
+class Table(SQL_Table):
 
 	def __init__(self, mapped=False, **kwargs):
+		super().__init__()
 		self._data = kwargs
 		if not mapped:
 			self._insert()
@@ -44,7 +45,6 @@ class Table(Subject, SQL_Table):
 			values[idx] = values[idx].__getattribute__(pk)
 
 		sql = self._get_insert_sql(fields)
-		print(sql, values)
 		data = self.notify_subscribers(sql, values)[0]
 
 		# update instance data
@@ -54,6 +54,9 @@ class Table(Subject, SQL_Table):
 			self.__setattr__(pk, value, update=False)
 
 	def _update(self, field, value):
+		if field in self.get_foreign_keys().keys():
+			pk = self.get_foreign_keys()[field].get_primary_key()
+			value = value.__getattribute__(pk)
 		sql = self._get_update_sql(field)
 		pk = self._data[self.get_primary_key()]
 		values = [value, pk]
@@ -62,3 +65,12 @@ class Table(Subject, SQL_Table):
 	@classmethod
 	def query(cls):
 		return Query(cls)
+
+	@classmethod
+	def remove(cls, instance):
+		pk = instance.get_primary_key()
+		values = []
+		
+		values.append(instance.__getattribute__(pk))
+		sql = cls._get_delete_sql(pk)
+		cls.notify_subscribers(sql, values)

@@ -50,7 +50,7 @@ class ForeignKey(Column):
 
 	def get_primary_key(self):
 		pk = self._table.get_primary_key()
-		return self._table.pk
+		return pk
 
 	@property
 	def sql_type(self):

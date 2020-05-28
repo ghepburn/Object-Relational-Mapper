@@ -6,7 +6,7 @@ TABLE_SELECT_SQL = "SELECT {fields} FROM {table}"
 TABLE_CREATE_SQL = "CREATE TABLE {table} ({fields})"
 TABLE_INSERT_SQL = "INSERT INTO {table} ({fields}) VALUES ({placeholders}) RETURNING ({pk})"
 TABLE_UPDATE_SQL = "UPDATE {table} SET {field}=%s WHERE {pk}=%s"
-TABLE_SELECT_WHERE_SQL = "SELECT {fields} FROM {table} WHERE ({filters})"
+TABLE_SELECT_WHERE_SQL = "SELECT {fields} FROM {table} WHERE {filters}"
 TABLE_DROP_SQL = "DROP TABLE {table}"
 
 COLUMN_CREATE_SQL = "{name} {type}"

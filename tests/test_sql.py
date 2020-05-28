@@ -29,7 +29,7 @@ class Test_Table:
 
 	def test_foreignkey(self):
 
-		assert table1.get_foreign_keys() == []
+		assert len(table1.get_foreign_keys().keys()) == 0
 
 	def test_sql_fields(self):
 		fields = table1._get_sql_fields()
@@ -58,8 +58,8 @@ class Test_Table:
 		gt = table1._get_select_where_sql(filters=["id>3"])
 		multiple = table1._get_select_where_sql(filters=["name=Greg", "age>15"])
 
-		assert gt == "SELECT * FROM table1 WHERE (id>3)"
-		assert multiple == "SELECT * FROM table1 WHERE (name=Greg, age>15)"
+		assert gt == "SELECT * FROM table1 WHERE id>3"
+		assert multiple == "SELECT * FROM table1 WHERE name=Greg, age>15"
 
 
 	def test_insert_sql(self):
@@ -107,7 +107,7 @@ class Test_Column:
 			name = Column(str)
 
 		assert table2.pk.is_primary_key() == True
-		assert table2.pk._get_create_sql("pk") == "pk SERIAL PRIMARY KEY"
+		assert table2.pk._get_create_sql("pk") == "pk INTEGER PRIMARY KEY"
 		assert table2.name._get_create_sql("name") == "name VARCHAR"
 
 

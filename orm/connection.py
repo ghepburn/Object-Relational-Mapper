@@ -32,13 +32,14 @@ class Connection(Subscriber):
 			cur.close()
 
 	def standardize(self, raw_values, fields):
-		
 		data = []
 		for row in raw_values:
 			data_set = dict(zip(fields, row))
 			data.append(data_set)
-		if len(data) == 1:
-			data = data[0]
+
+		# if len(data) == 1:
+		# 	data = data[0]
+
 		return data
 		
 

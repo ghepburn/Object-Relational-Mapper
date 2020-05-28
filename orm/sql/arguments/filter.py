@@ -9,7 +9,7 @@ class Filter(Argument):
 	sql = FIELD_FILTER_SQL
 
 	def __init__(self, table):
-		self._fields = table.get_fields().keys()
+		self._fields = table.get_fields()
 		self._filters = []
 		self._values = []
 
@@ -21,11 +21,12 @@ class Filter(Argument):
 
 	def _process_strings(self, string):
 		if type(string) == list:
-			for arg in strings:
+			for arg in string:
 				field, operator, value = self._parse_filter_string(arg)
+				self._set(field, operator, value)
 		else:
 			field, operator, value = self._parse_filter_string(string)
-		self._set(field, operator, value)
+			self._set(field, operator, value)
 
 	def _process_kwargs(self, **kwargs):
 		for arg in kwargs:
@@ -35,10 +36,18 @@ class Filter(Argument):
 			self._set(field, operator, value)
 
 	def _set(self, field, operator, value):
+
+		if type(value) not in [int, str, list]:
+			value = self._transform_foreign_key(value)
+
 		if self._valid_field(field):
 			arg_sql = self.sql.format(field=field, operator=operator, placeholder=self.default_placeholder) 
 			self._filters.append(arg_sql)
 			self._values.append(value)
+
+	def _transform_foreign_key(self, value):
+		pk = value.get_primary_key()
+		return value.__getattribute__(pk)
 
 	def _parse_filter_string(self, string_statement):
 		if len(string_statement.split()) == 3:
@@ -55,12 +64,13 @@ class Filter(Argument):
 		return field, operator, value
 
 	def _valid_field(self, field):
-		if field in self._fields:
+		if field in self._fields.keys():
 			return True
 		else:
 			return False
 
 	def get(self):
-		filters = ", ".join(self._filters)
+		filters = "AND ".join(self._filters)
 		values = self._values
+		print(filters, values)
 		return filters, values

@@ -43,7 +43,6 @@ class Query:
 	def _process_args(self, **kwargs):
 
 		for arg in self.postprocess_arguments:
-			print(arg.get_name())
 			if arg.get_name() in kwargs:
 				requested_arg = arg(kwargs[arg.get_name()])
 				self.argument_queue.append(requested_arg)
@@ -54,26 +53,24 @@ class Query:
 		while len(self.argument_queue) > 0:
 			arg = self.argument_queue.popleft()
 			sql += arg.get_sql()
-			print(sql)
 
 		if values != None and len(values) > 0:
 			data = self.table.notify_subscribers(sql, values)
 		else:
 			data = self.table.notify_subscribers(sql)
-
 		packaged_data = self._standardize(data)
 		
 		return packaged_data
 
 	def _standardize(self, data):
+		print(data)
 		all_data = []
 		# instantiate dictionaries as objects
-		for response in data:
-			object_list = []
-			for row in response:
-				new_object = self.table(mapped=True, **row)
-				object_list.append(new_object)
-			all_data.append(self.package_data(*object_list))
+		object_list = []
+		for row in data:
+			new_object = self.table(mapped=True, **row)
+			object_list.append(new_object)
+		all_data.append(self.package_data(*object_list))
 		
 		# return data representation object
 		if len(all_data) == 1:
