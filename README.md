@@ -5,7 +5,7 @@ Custom object relational mapper built in Python using only Psycopg2 third party 
 from ORM import Database
 
 instantiate a database object
-db = Database(host=***, database=***, user=***, password=***)
+db = Database(host=XXX, database=XXX, user=XXX, password=XXX)
 
 create python object via database models
 fro ORM import Column, ForeignKey
