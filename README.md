@@ -1,5 +1,5 @@
 # Object-Relational-Mapper
-Custom object relational mapper built in Python using only Psycopg2 third party library.
+Custom object relational mapper built in Python using only Psycopg2 Postgres database third party library. This project was inspired by a curiosity of how SQLAlchemy worked, a desire to increase my knowledge how to work programstically with databases 
 
 # How It Works
         from ORM import Database, Column, ForeignKey
